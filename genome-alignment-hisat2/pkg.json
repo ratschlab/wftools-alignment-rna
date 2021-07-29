@@ -1,0 +1,38 @@
+{
+    "name": "genome-alignment-hisat2",
+    "version": "0.1.0",
+    "description": "Genome alignment with HISAT2",
+    "main": "main.nf",
+    "deprecated": false,
+    "keywords": [
+        "bioinformatics",
+        "rna-seq",
+        "alignment",
+        "hisat2"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ratschlab/wftools-alignment-rna.git"
+    },
+    "container": {
+        "registries": [
+            {
+                "registry": "ghcr.io",
+                "type": "docker",
+                "org": "ratschlab",
+                "default": true
+            }
+        ]
+    },
+    "dependencies": [],
+    "devDependencies": [],
+    "contributors": [
+        {
+            "name": "Andre Kahles",
+            "email": "andre.kahles@inf.ethz.ch"
+        }
+    ],
+    "license": "MIT",
+    "bugReport": "https://github.com/ratschlab/wftools-alignment-rna/issues",
+    "homepage": "https://github.com/ratschlab/wftools-alignment-rna#readme"
+}
