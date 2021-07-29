@@ -37,7 +37,7 @@ nextflow.enable.dsl = 2
 version = '0.1.0'  // package version
 
 container = [
-    'ghcr.io': 'ghcr.io/icgc-argo-rna-wg/rna-seq-alignment.genome-alignment-star'
+    'ghcr.io': 'ghcr.io/ratschlab/wftools-alignment-rna.genome-alignment-star'
 ]
 default_container_registry = 'ghcr.io'
 /********************************************************************/
