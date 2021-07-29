@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 /*
-  Copyright (c) 2021, icgc-argo-rna-wg
+  Copyright (c) 2021, ratschlab
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ params.sample = ""
 params.sjdboverhang = 100
 params.pair_status = "paired"
 
-process icgcArgoRnaSeqAlignmentSTAR {
+process genomeAlignmentSTAR {
   container "${params.container ?: container[params.container_registry ?: default_container_registry]}:${params.container_version ?: version}"
   publishDir "${params.publish_dir}/${task.process.replaceAll(':', '_')}", mode: "copy", enabled: params.publish_dir
 
@@ -96,7 +96,7 @@ process icgcArgoRnaSeqAlignmentSTAR {
 // this provides an entry point for this main script, so it can be run directly without clone the repo
 // using this command: nextflow run <git_acc>/<repo>/<pkg_name>/<main_script>.nf -r <pkg_name>.v<pkg_version> --params-file xxx
 workflow {
-  icgcArgoRnaSeqAlignmentSTAR(
+  genomeAlignmentSTAR(
     file(params.index),
     file(params.gtf),
     params.input_files.collect({it -> file(it)}),

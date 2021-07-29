@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 /*
-  Copyright (c) 2021, icgc-argo-rna-wg
+  Copyright (c) 2021, ratschlab
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ params.sjdboverhang = 100
 params.pair_status = "paired"
 params.expected_output = "tests/expected/sample_01_Aligned.out.bam"
 
-include { icgcArgoRnaSeqAlignmentSTAR } from '../main' params(['cleanup': false, *:params])
+include { genomeAlignmentSTAR } from '../main' params(['cleanup': false, *:params])
 
 process diff_bam {
   container "${params.container ?: container[params.container_registry ?: default_container_registry]}:${params.container_version ?: version}"
@@ -106,7 +106,7 @@ workflow checker {
     expected_junctions
 
   main:
-    icgcArgoRnaSeqAlignmentSTAR(
+    genomeAlignmentSTAR(
         index,
         gtf,
         input_files,
@@ -117,12 +117,12 @@ workflow checker {
     )
 
     diff_bam(
-      icgcArgoRnaSeqAlignmentSTAR.out.bam,
+      genomeAlignmentSTAR.out.bam,
       expected_bam
     )
 
     diff_junctions(
-      icgcArgoRnaSeqAlignmentSTAR.out.junctions,
+      genomeAlignmentSTAR.out.junctions,
       expected_junctions
     )
 }
