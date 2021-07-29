@@ -56,7 +56,7 @@ params.sjdboverhang = 100
 params.pair_status = "paired"
 params.expected_output = "tests/expected/sample_01_Aligned.out.bam"
 
-include { icgcArgoRnaSeqAlignmentSTAR } from '../alignSTAR' params(['cleanup': false, *:params])
+include { icgcArgoRnaSeqAlignmentSTAR } from '../main' params(['cleanup': false, *:params])
 
 process diff_bam {
   container "${params.container ?: container[params.container_registry ?: default_container_registry]}:${params.container_version ?: version}"
