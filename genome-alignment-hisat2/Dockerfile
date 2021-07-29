@@ -40,7 +40,7 @@ RUN mkdir -p /tools
 RUN curl -sSL -o /tools/picard.jar --retry 10 https://github.com/broadinstitute/picard/releases/download/2.21.8/picard.jar
 
 ### get run script
-COPY alignHISAT2.py /tools
+COPY main.py /tools
 
 ### set up environment
 ENV PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:"
