@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 /*
-  Copyright (c) 2021, ratschlab
+  Copyright (c) 2021, icgc-argo-rna-wg
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ nextflow.enable.dsl = 2
 version = '0.1.0'  // package version
 
 container = [
-    'ghcr.io': 'ghcr.io/ratschlab/wftools-alignment-rna.genome-alignment-star'
+    'ghcr.io': 'ghcr.io/icgc-argo-rna-wg/rna-seq-alignment.genome-alignment-star'
 ]
 default_container_registry = 'ghcr.io'
 /********************************************************************/
@@ -48,13 +48,17 @@ params.container_version = ""
 params.container = ""
 
 // tool specific parmas go here, add / change as needed
-params.input_file = ""
-params.expected_output = ""
+params.index = "NO_FILE_1"
+params.gtf = "NO_FILE_2"
+params.input_bam = "NO_FILE_3"
+params.sample = "sample_01"
+params.sjdboverhang = 100
+params.pair_status = "paired"
+params.expected_output = "tests/expected/sample_01_Aligned.out.bam"
 
-include { genomeAlignmentStar } from '../main'
+include { icgcArgoRnaSeqAlignmentSTAR } from '../alignSTAR' params(['cleanup': false, *:params])
 
-
-process file_smart_diff {
+process diff_bam {
   container "${params.container ?: container[params.container_registry ?: default_container_registry]}:${params.container_version ?: version}"
 
   input:
@@ -66,42 +70,74 @@ process file_smart_diff {
 
   script:
     """
-    # Note: this is only for demo purpose, please write your own 'diff' according to your own needs.
-    # in this example, we need to remove date field before comparison eg, <div id="header_filename">Tue 19 Jan 2021<br/>test_rg_3.bam</div>
-    # sed -e 's#"header_filename">.*<br/>test_rg_3.bam#"header_filename"><br/>test_rg_3.bam</div>#'
+    diff <(samtools view --no-PG ${output_file} | sort) <(samtools view --no-PG ${expected_file} | sort) \
+      && ( echo "Test PASSED" && exit 0 ) || ( echo "Test FAILED, bam files mismatch." && exit 1 )
+    """
+}
 
-    cat ${output_file} \
-      | sed -e 's#"header_filename">.*<br/>#"header_filename"><br/>#' > normalized_output
+process diff_junctions {
+  container "${params.container ?: container[params.container_registry ?: default_container_registry]}:${params.container_version ?: version}"
 
-    ([[ '${expected_file}' == *.gz ]] && gunzip -c ${expected_file} || cat ${expected_file}) \
-      | sed -e 's#"header_filename">.*<br/>#"header_filename"><br/>#' > normalized_expected
+  input:
+    path output_file
+    path expected_file
 
-    diff normalized_output normalized_expected \
-      && ( echo "Test PASSED" && exit 0 ) || ( echo "Test FAILED, output file mismatch." && exit 1 )
+  output:
+    stdout()
+
+  script:
+    """
+    diff <(sort ${output_file}) <(sort ${expected_file}) \
+      && ( echo "Test PASSED" && exit 0 ) || ( echo "Test FAILED, junction files mismatch." && exit 1 )
     """
 }
 
 
 workflow checker {
   take:
-    input_file
-    expected_output
+    index
+    gtf
+    input_files
+    input_format
+    sample
+    sjdboverhang
+    pair_status
+    expected_bam
+    expected_junctions
 
   main:
-    genomeAlignmentStar(
-      input_file
+    icgcArgoRnaSeqAlignmentSTAR(
+        index,
+        gtf,
+        input_files,
+        input_format,
+        pair_status,
+        sample,
+        sjdboverhang
     )
 
-    file_smart_diff(
-      genomeAlignmentStar.out.output_file,
-      expected_output
+    diff_bam(
+      icgcArgoRnaSeqAlignmentSTAR.out.bam,
+      expected_bam
+    )
+
+    diff_junctions(
+      icgcArgoRnaSeqAlignmentSTAR.out.junctions,
+      expected_junctions
     )
 }
 
 
 workflow {
   checker(
-    file(params.input_file),
-    file(params.expected_output)
+    file(params.index),
+    file(params.gtf),
+    params.input_files.collect({it -> file(it)}),
+    params.input_format,
+    params.sample,
+    params.sjdboverhang,
+    params.pair_status,
+    file(params.expected_bam),
+    file(params.expected_junctions)
   )
 }

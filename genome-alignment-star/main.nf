@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 /*
-  Copyright (c) 2021, ratschlab
+  Copyright (c) 2021, icgc-argo-rna-wg
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ nextflow.enable.dsl = 2
 version = '0.1.0'  // package version
 
 container = [
-    'ghcr.io': 'ghcr.io/ratschlab/wftools-alignment-rna.genome-alignment-star'
+    'ghcr.io': 'ghcr.io/icgc-argo-rna-wg/rna-seq-alignment.genome-alignment-star'
 ]
 default_container_registry = 'ghcr.io'
 /********************************************************************/
@@ -49,41 +49,60 @@ params.publish_dir = ""  // set to empty string will disable publishDir
 
 
 // tool specific parmas go here, add / change as needed
-params.input_file = ""
-params.output_pattern = "*.html"  // output file name pattern
+params.index = "NO_FILE_1" //input/test_genome.index_STAR"
+params.gtf = "NO_FILE_2" //input/test_annotation.gtf"
+params.input_files = ["NO_FILE_3"]//input/TEST-PRO.donor1.donor1_sample1_id.sample_01.b22541e45ff72d9a042e877a0531af0b.lane.bam"
+params.input_format = "ubam"
+params.sample = ""
+params.sjdboverhang = 100
+params.pair_status = "paired"
 
-
-process genomeAlignmentStar {
+process icgcArgoRnaSeqAlignmentSTAR {
   container "${params.container ?: container[params.container_registry ?: default_container_registry]}:${params.container_version ?: version}"
   publishDir "${params.publish_dir}/${task.process.replaceAll(':', '_')}", mode: "copy", enabled: params.publish_dir
 
   cpus params.cpus
   memory "${params.mem} GB"
 
-  input:  // input, make update as needed
-    path input_file
+  input:  
+    file index
+    file gtf
+    path input_files
+    val input_format
+    val pair_status
+    val sample
+    val sjdboverhang
 
   output:  // output, make update as needed
-    path "output_dir/${params.output_pattern}", emit: output_file
+    path("${sample}_Aligned.out.bam"), emit: bam
+    path("${sample}_SJ.out.tab"), emit: junctions
+    path("${sample}_Log*")
 
   script:
-    // add and initialize variables here as needed
-
     """
-    mkdir -p output_dir
-
-    main.py \
-      -i ${input_file} \
-      -o output_dir
-
+    python /tools/main.py \\
+           --sample ${sample} \\
+           --index ${index} \\
+           --annotation ${gtf} \\
+           --threads ${params.cpus} \\
+           --sjdbOverhang ${sjdboverhang} \\
+           --pair-status ${pair_status} \\
+           --input-files ${input_files} \\
+           --input-format ${input_format} \\
+           --mem ${params.mem * 1000} > ${sample}_align.log 2>&1
     """
 }
-
 
 // this provides an entry point for this main script, so it can be run directly without clone the repo
 // using this command: nextflow run <git_acc>/<repo>/<pkg_name>/<main_script>.nf -r <pkg_name>.v<pkg_version> --params-file xxx
 workflow {
-  genomeAlignmentStar(
-    file(params.input_file)
+  icgcArgoRnaSeqAlignmentSTAR(
+    file(params.index),
+    file(params.gtf),
+    params.input_files.collect({it -> file(it)}),
+    params.input_format,
+    params.pair_status,
+    params.sample,
+    params.sjdboverhang
   )
 }
